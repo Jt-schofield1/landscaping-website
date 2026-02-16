@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -11,7 +11,10 @@ import {
   Type,
   AlignLeft,
   Link2,
-  Image as ImageIcon,
+  Upload,
+  X,
+  ImageIcon,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -50,6 +53,9 @@ export default function BlogEditor({ postId }: { postId?: string }) {
   const [success, setSuccess] = useState("");
   const [autoSlug, setAutoSlug] = useState(true);
   const [preview, setPreview] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   const isEdit = !!postId;
@@ -107,6 +113,70 @@ export default function BlogEditor({ postId }: { postId?: string }) {
     }));
   };
 
+  const handleImageUpload = async (file: File) => {
+    const token = getToken();
+    if (!token) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      setError("Invalid file type. Use JPG, PNG, WebP, or GIF.");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError("File too large. Maximum size is 10MB.");
+      return;
+    }
+
+    setUploading(true);
+    setError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Upload failed");
+      } else {
+        setForm((prev) => ({ ...prev, image_url: data.url }));
+      }
+    } catch {
+      setError("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleImageUpload(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleImageUpload(file);
+    e.target.value = "";
+  };
+
   const handleSave = async (publish?: boolean) => {
     const token = getToken();
     if (!token) {
@@ -115,7 +185,9 @@ export default function BlogEditor({ postId }: { postId?: string }) {
     }
 
     if (!form.title || !form.slug || !form.excerpt || !form.content) {
-      setError("Please fill in all required fields (title, slug, excerpt, content).");
+      setError(
+        "Please fill in all required fields (title, slug, excerpt, content)."
+      );
       return;
     }
 
@@ -148,10 +220,7 @@ export default function BlogEditor({ postId }: { postId?: string }) {
         if (!isEdit) {
           router.push(`/admin/blog/${data.id}`);
         } else {
-          setForm((prev) => ({
-            ...prev,
-            published: data.published,
-          }));
+          setForm((prev) => ({ ...prev, published: data.published }));
         }
       }
     } catch {
@@ -163,21 +232,24 @@ export default function BlogEditor({ postId }: { postId?: string }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
-        <div className="text-brand-muted animate-pulse">Loading post...</div>
+      <div className="min-h-screen bg-[#0f1117] flex items-center justify-center">
+        <div className="flex items-center gap-3 text-white/40">
+          <Loader2 size={18} className="animate-spin" />
+          Loading post...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-[#0f1117]">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-20">
+      <div className="bg-[#161821] border-b border-white/[0.06] sticky top-0 z-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             <Link
               href="/admin/blog"
-              className="flex items-center gap-2 text-sm text-brand-muted hover:text-brand-dark transition-colors"
+              className="flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors"
             >
               <ArrowLeft size={16} />
               All Posts
@@ -187,8 +259,8 @@ export default function BlogEditor({ postId }: { postId?: string }) {
                 onClick={() => setPreview(!preview)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   preview
-                    ? "bg-brand-green/10 text-brand-green-dark"
-                    : "text-brand-muted hover:text-brand-dark hover:bg-gray-50"
+                    ? "bg-emerald-500/15 text-emerald-400"
+                    : "text-white/40 hover:text-white/60 hover:bg-white/5"
                 }`}
               >
                 <Eye size={14} />
@@ -198,7 +270,7 @@ export default function BlogEditor({ postId }: { postId?: string }) {
                 <button
                   onClick={() => handleSave(false)}
                   disabled={saving}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 transition-all disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 transition-all disabled:opacity-50"
                 >
                   Unpublish
                 </button>
@@ -206,7 +278,7 @@ export default function BlogEditor({ postId }: { postId?: string }) {
                 <button
                   onClick={() => handleSave(true)}
                   disabled={saving}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium text-brand-green-dark bg-brand-green/10 hover:bg-brand-green/20 transition-all disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all disabled:opacity-50"
                 >
                   <Globe size={14} />
                   Publish
@@ -215,9 +287,13 @@ export default function BlogEditor({ postId }: { postId?: string }) {
               <button
                 onClick={() => handleSave()}
                 disabled={saving}
-                className="flex items-center gap-1.5 bg-brand-green hover:bg-brand-green-dark text-white px-4 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50"
               >
-                <Save size={14} />
+                {saving ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Save size={14} />
+                )}
                 {saving ? "Saving..." : "Save"}
               </button>
             </div>
@@ -228,27 +304,37 @@ export default function BlogEditor({ postId }: { postId?: string }) {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Messages */}
         {error && (
-          <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl mb-6 border border-red-100">
+          <div className="bg-red-500/10 text-red-400 text-sm px-4 py-3 rounded-xl mb-6 border border-red-500/20">
             {error}
           </div>
         )}
         {success && (
-          <div className="bg-green-50 text-green-600 text-sm px-4 py-3 rounded-xl mb-6 border border-green-100">
+          <div className="bg-emerald-500/10 text-emerald-400 text-sm px-4 py-3 rounded-xl mb-6 border border-emerald-500/20">
             {success}
           </div>
         )}
 
         {preview ? (
           /* Preview Mode */
-          <div className="bg-white rounded-2xl border border-gray-100 p-8 sm:p-10">
-            <div className="text-xs text-brand-muted font-medium mb-4 flex items-center gap-2">
+          <div className="bg-[#161821] rounded-2xl border border-white/[0.06] p-8 sm:p-10">
+            <div className="text-xs text-white/30 font-medium mb-6 flex items-center gap-2">
               <Eye size={13} />
               Preview
             </div>
-            <h1 className="font-display text-3xl font-bold text-brand-dark mb-4">
+            {form.image_url && (
+              <div className="relative h-52 rounded-xl overflow-hidden mb-6">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={form.image_url}
+                  alt="Cover"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <h1 className="font-display text-3xl font-bold text-white mb-4">
               {form.title || "Untitled Post"}
             </h1>
-            <p className="text-brand-muted text-sm italic mb-6">
+            <p className="text-white/40 text-sm italic mb-6 pb-6 border-b border-white/[0.06]">
               {form.excerpt || "No excerpt"}
             </p>
             <div className="prose-custom">
@@ -257,7 +343,7 @@ export default function BlogEditor({ postId }: { postId?: string }) {
                   return (
                     <h3
                       key={i}
-                      className="font-display text-xl font-bold text-brand-dark mt-6 mb-2"
+                      className="text-xl font-bold text-white mt-6 mb-2"
                     >
                       {paragraph.slice(2, -2)}
                     </h3>
@@ -265,14 +351,11 @@ export default function BlogEditor({ postId }: { postId?: string }) {
                 }
                 const parts = paragraph.split(/(\*\*[^*]+\*\*)/g);
                 return (
-                  <p
-                    key={i}
-                    className="text-brand-dark/80 leading-relaxed mb-4"
-                  >
+                  <p key={i} className="text-white/60 leading-relaxed mb-4">
                     {parts.map((part, j) => {
                       if (part.startsWith("**") && part.endsWith("**")) {
                         return (
-                          <strong key={j} className="font-semibold text-brand-dark">
+                          <strong key={j} className="font-semibold text-white/80">
                             {part.slice(2, -2)}
                           </strong>
                         );
@@ -286,13 +369,13 @@ export default function BlogEditor({ postId }: { postId?: string }) {
           </div>
         ) : (
           /* Editor Mode */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             {/* Main editor */}
             <div className="lg:col-span-2 space-y-5">
               {/* Title */}
-              <div className="bg-white rounded-xl border border-gray-100 p-5">
-                <label className="flex items-center gap-2 text-xs font-semibold text-brand-dark mb-2">
-                  <Type size={13} />
+              <div className="bg-[#161821] rounded-xl border border-white/[0.06] p-5">
+                <label className="flex items-center gap-2 text-[11px] font-semibold text-white/30 uppercase tracking-wider mb-3">
+                  <Type size={12} />
                   Title *
                 </label>
                 <input
@@ -300,19 +383,19 @@ export default function BlogEditor({ postId }: { postId?: string }) {
                   value={form.title}
                   onChange={(e) => handleTitleChange(e.target.value)}
                   placeholder="Enter your blog post title..."
-                  className="w-full text-lg font-display font-bold text-brand-dark placeholder:text-gray-300 focus:outline-none border-none p-0"
+                  className="w-full text-xl font-bold text-white bg-transparent placeholder:text-white/15 focus:outline-none border-none p-0"
                 />
               </div>
 
               {/* Content */}
-              <div className="bg-white rounded-xl border border-gray-100 p-5">
-                <label className="flex items-center gap-2 text-xs font-semibold text-brand-dark mb-2">
-                  <FileText size={13} />
+              <div className="bg-[#161821] rounded-xl border border-white/[0.06] p-5">
+                <label className="flex items-center gap-2 text-[11px] font-semibold text-white/30 uppercase tracking-wider mb-2">
+                  <FileText size={12} />
                   Content *
                 </label>
-                <div className="mb-2 text-[11px] text-brand-muted">
+                <div className="mb-3 text-[11px] text-white/20 leading-relaxed">
                   Use **bold text** for emphasis. Separate paragraphs with blank
-                  lines. Use **heading** on its own line for subheadings.
+                  lines. Use **Heading** on its own line for subheadings.
                 </div>
                 <textarea
                   value={form.content}
@@ -326,24 +409,112 @@ Separate paragraphs with a blank line.
 **Use double asterisks for bold text**
 
 Start a line with **Heading Text** for a subheading."
-                  rows={20}
-                  className="w-full text-sm text-brand-dark leading-relaxed placeholder:text-gray-300 focus:outline-none border border-gray-100 rounded-lg p-4 resize-y font-mono"
+                  rows={22}
+                  className="w-full text-sm text-white/70 leading-relaxed bg-[#0f1117] placeholder:text-white/10 focus:outline-none border border-white/[0.06] rounded-lg p-4 resize-y font-mono focus:border-emerald-500/30 transition-colors"
                 />
               </div>
             </div>
 
             {/* Sidebar */}
             <div className="space-y-5">
+              {/* Cover Image Upload */}
+              <div className="bg-[#161821] rounded-xl border border-white/[0.06] p-5">
+                <label className="flex items-center gap-2 text-[11px] font-semibold text-white/30 uppercase tracking-wider mb-3">
+                  <ImageIcon size={12} />
+                  Cover Image
+                </label>
+
+                {form.image_url ? (
+                  <div className="relative group">
+                    <div className="relative h-40 bg-[#0f1117] rounded-lg overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={form.image_url}
+                        alt="Cover preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "";
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    </div>
+                    <button
+                      onClick={() =>
+                        setForm((prev) => ({ ...prev, image_url: "" }))
+                      }
+                      className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-red-500 text-white rounded-lg flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                      title="Remove image"
+                    >
+                      <X size={14} />
+                    </button>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="mt-2 w-full text-xs text-white/30 hover:text-white/50 transition-colors text-center py-1.5"
+                    >
+                      Click to replace
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`relative h-40 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${
+                      dragOver
+                        ? "border-emerald-500/50 bg-emerald-500/5"
+                        : "border-white/[0.08] bg-[#0f1117] hover:border-white/15 hover:bg-[#0f1117]/80"
+                    }`}
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2
+                          size={24}
+                          className="text-emerald-400 animate-spin mb-2"
+                        />
+                        <span className="text-xs text-white/30">
+                          Uploading...
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload
+                          size={22}
+                          className={`mb-2 transition-colors ${
+                            dragOver ? "text-emerald-400" : "text-white/15"
+                          }`}
+                        />
+                        <span className="text-xs text-white/30 font-medium">
+                          Drop an image here
+                        </span>
+                        <span className="text-[10px] text-white/15 mt-1">
+                          or click to browse
+                        </span>
+                        <span className="text-[10px] text-white/10 mt-2">
+                          JPG, PNG, WebP &middot; Max 10MB
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
+
               {/* Slug */}
-              <div className="bg-white rounded-xl border border-gray-100 p-5">
-                <label className="flex items-center gap-2 text-xs font-semibold text-brand-dark mb-2">
-                  <Link2 size={13} />
+              <div className="bg-[#161821] rounded-xl border border-white/[0.06] p-5">
+                <label className="flex items-center gap-2 text-[11px] font-semibold text-white/30 uppercase tracking-wider mb-3">
+                  <Link2 size={12} />
                   URL Slug *
                 </label>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-brand-muted shrink-0">
-                    /blog/
-                  </span>
+                  <span className="text-xs text-white/20 shrink-0">/blog/</span>
                   <input
                     type="text"
                     value={form.slug}
@@ -355,20 +526,20 @@ Start a line with **Heading Text** for a subheading."
                       }));
                     }}
                     placeholder="your-post-url"
-                    className="w-full text-sm text-brand-dark placeholder:text-gray-300 focus:outline-none border-none p-0"
+                    className="w-full text-sm text-white/60 bg-transparent placeholder:text-white/10 focus:outline-none border-none p-0"
                   />
                 </div>
                 {autoSlug && (
-                  <p className="text-[10px] text-brand-green-dark mt-1">
+                  <p className="text-[10px] text-emerald-400/50 mt-2">
                     Auto-generated from title
                   </p>
                 )}
               </div>
 
               {/* Excerpt */}
-              <div className="bg-white rounded-xl border border-gray-100 p-5">
-                <label className="flex items-center gap-2 text-xs font-semibold text-brand-dark mb-2">
-                  <AlignLeft size={13} />
+              <div className="bg-[#161821] rounded-xl border border-white/[0.06] p-5">
+                <label className="flex items-center gap-2 text-[11px] font-semibold text-white/30 uppercase tracking-wider mb-3">
+                  <AlignLeft size={12} />
                   Excerpt *
                 </label>
                 <textarea
@@ -376,62 +547,28 @@ Start a line with **Heading Text** for a subheading."
                   onChange={(e) =>
                     setForm((prev) => ({ ...prev, excerpt: e.target.value }))
                   }
-                  placeholder="A short summary that appears on the blog listing page..."
+                  placeholder="A short summary for the blog listing..."
                   rows={3}
-                  className="w-full text-sm text-brand-dark placeholder:text-gray-300 focus:outline-none border border-gray-100 rounded-lg p-3 resize-none"
+                  className="w-full text-sm text-white/60 bg-[#0f1117] placeholder:text-white/10 focus:outline-none border border-white/[0.06] rounded-lg p-3 resize-none focus:border-emerald-500/30 transition-colors"
                 />
-              </div>
-
-              {/* Image URL */}
-              <div className="bg-white rounded-xl border border-gray-100 p-5">
-                <label className="flex items-center gap-2 text-xs font-semibold text-brand-dark mb-2">
-                  <ImageIcon size={13} />
-                  Cover Image URL
-                </label>
-                <input
-                  type="text"
-                  value={form.image_url}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, image_url: e.target.value }))
-                  }
-                  placeholder="/images/your-photo.jpg or https://..."
-                  className="w-full text-sm text-brand-dark placeholder:text-gray-300 focus:outline-none border border-gray-100 rounded-lg p-3"
-                />
-                <p className="text-[10px] text-brand-muted mt-1">
-                  Optional. Use a local path like /images/photo.jpg or a full
-                  URL.
-                </p>
-                {form.image_url && (
-                  <div className="mt-3 relative h-32 bg-gray-50 rounded-lg overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={form.image_url}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  </div>
-                )}
               </div>
 
               {/* Status */}
-              <div className="bg-white rounded-xl border border-gray-100 p-5">
+              <div className="bg-[#161821] rounded-xl border border-white/[0.06] p-5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-brand-dark">
+                  <span className="text-[11px] font-semibold text-white/30 uppercase tracking-wider">
                     Status
                   </span>
                   <span
                     className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${
                       form.published
-                        ? "bg-brand-green/10 text-brand-green-dark"
-                        : "bg-amber-50 text-amber-600"
+                        ? "bg-emerald-500/10 text-emerald-400"
+                        : "bg-amber-500/10 text-amber-400"
                     }`}
                   >
                     <span
                       className={`w-1.5 h-1.5 rounded-full ${
-                        form.published ? "bg-brand-green" : "bg-amber-400"
+                        form.published ? "bg-emerald-400" : "bg-amber-400"
                       }`}
                     />
                     {form.published ? "Published" : "Draft"}
