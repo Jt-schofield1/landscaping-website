@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Phone } from "lucide-react";
 import Image from "next/image";
@@ -11,6 +12,7 @@ const navLinks = [
   { label: "About", href: "#about" },
   { label: "Gallery", href: "#gallery" },
   { label: "Service Area", href: "#service-area" },
+  { label: "Blog", href: "/blog" },
   { label: "Contact", href: "#contact" },
 ];
 
@@ -35,11 +37,27 @@ export default function Navbar() {
     };
   }, [mobileOpen]);
 
+  const router = useRouter();
+  const pathname = usePathname();
+
   const handleNavClick = (href: string) => {
     setMobileOpen(false);
-    const el = document.querySelector(href);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
+
+    // If it's a page link (starts with /), navigate to it
+    if (href.startsWith("/")) {
+      router.push(href);
+      return;
+    }
+
+    // If we're on the homepage, just scroll
+    if (pathname === "/") {
+      const el = document.querySelector(href);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      // If we're on another page, navigate home first then scroll
+      router.push("/" + href);
     }
   };
 
@@ -50,7 +68,7 @@ export default function Navbar() {
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          scrolled
+          scrolled || pathname !== "/"
             ? "bg-white/95 backdrop-blur-md shadow-lg shadow-black/5"
             : "bg-transparent"
         }`}
@@ -78,7 +96,7 @@ export default function Navbar() {
               <div className="hidden sm:flex flex-col">
                 <span
                   className={`font-display text-[17px] font-bold tracking-tight leading-none transition-colors duration-500 ${
-                    scrolled ? "text-brand-dark" : "text-white"
+                    scrolled || pathname !== "/" ? "text-brand-dark" : "text-white"
                   }`}
                 >
                   Adjacent
@@ -86,12 +104,12 @@ export default function Navbar() {
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <div
                     className={`h-[2px] w-4 rounded-full transition-colors duration-500 ${
-                      scrolled ? "bg-brand-green" : "bg-brand-green-light"
+                      scrolled || pathname !== "/" ? "bg-brand-green" : "bg-brand-green-light"
                     }`}
                   />
                   <span
                     className={`text-[10px] font-semibold tracking-[0.15em] uppercase transition-colors duration-500 ${
-                      scrolled
+                      scrolled || pathname !== "/"
                         ? "text-brand-green-dark"
                         : "text-brand-green-light"
                     }`}
@@ -107,21 +125,23 @@ export default function Navbar() {
               {navLinks.map((link) => (
                 <a
                   key={link.href}
-                  href={link.href}
+                  href={link.href.startsWith("/") ? link.href : link.href}
                   onClick={(e) => {
                     e.preventDefault();
                     handleNavClick(link.href);
                   }}
                   className={`relative px-4 py-2 text-sm font-medium transition-all duration-300 group/link ${
-                    scrolled
+                    scrolled || pathname !== "/"
                       ? "text-brand-dark/70 hover:text-brand-green-dark"
                       : "text-white/75 hover:text-white"
-                  }`}
+                  } ${pathname === link.href ? "!text-brand-green-dark" : ""}`}
                 >
                   {link.label}
                   <span
-                    className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 h-[2px] w-0 group-hover/link:w-5 rounded-full transition-all duration-300 ${
-                      scrolled ? "bg-brand-green-dark" : "bg-brand-green-light"
+                    className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 h-[2px] rounded-full transition-all duration-300 ${
+                      pathname === link.href ? "w-5" : "w-0 group-hover/link:w-5"
+                    } ${
+                      scrolled || pathname !== "/" ? "bg-brand-green-dark" : "bg-brand-green-light"
                     }`}
                   />
                 </a>
@@ -133,7 +153,7 @@ export default function Navbar() {
               <a
                 href="tel:5857699008"
                 className={`flex items-center gap-2 text-sm font-medium transition-colors duration-500 ${
-                  scrolled ? "text-brand-dark" : "text-white"
+                  scrolled || pathname !== "/" ? "text-brand-dark" : "text-white"
                 }`}
               >
                 <Phone size={15} />
@@ -159,7 +179,7 @@ export default function Navbar() {
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
               className={`lg:hidden relative w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 ${
-                scrolled
+                scrolled || pathname !== "/"
                   ? "text-brand-dark bg-brand-green/5 hover:bg-brand-green/10"
                   : "text-white bg-white/10 hover:bg-white/20"
               }`}

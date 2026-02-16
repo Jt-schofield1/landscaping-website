@@ -6,18 +6,18 @@ import { MapPin, Navigation } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const areas = [
-  "Rochester",
-  "Irondequoit",
-  "Brighton",
-  "Pittsford",
-  "Penfield",
   "Webster",
+  "Penfield",
+  "Fairport",
+  "Pittsford",
+  "Brighton",
+  "Victor",
+  "Irondequoit",
   "Greece",
   "Gates",
   "Henrietta",
-  "Fairport",
-  "Victor",
   "Chili",
+  "East Rochester",
 ];
 
 // Dynamically import the map with no SSR - this is critical for Leaflet
@@ -56,9 +56,9 @@ export default function ServiceArea() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6"
           >
-            Proudly Serving Rochester
+            Proudly Serving the
             <br />
-            <span className="text-brand-green-light">& Surrounding Areas</span>
+            <span className="text-brand-green-light">Greater Rochester Area</span>
           </motion.h2>
         </div>
 

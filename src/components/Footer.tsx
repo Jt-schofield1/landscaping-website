@@ -2,6 +2,7 @@
 
 import { Phone, Mail, MapPin, ArrowUp } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 function FacebookIcon({ className }: { className?: string }) {
   return (
@@ -22,6 +23,7 @@ const quickLinks = [
   { label: "About", href: "#about" },
   { label: "Gallery", href: "#gallery" },
   { label: "Service Area", href: "#service-area" },
+  { label: "Blog", href: "/blog" },
   { label: "Contact", href: "#contact" },
 ];
 
@@ -92,16 +94,25 @@ export default function Footer() {
             <ul className="space-y-3">
               {quickLinks.map((link) => (
                 <li key={link.href}>
-                  <a
-                    href={link.href}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleNavClick(link.href);
-                    }}
-                    className="text-white/60 hover:text-brand-green-light transition-colors text-sm"
-                  >
-                    {link.label}
-                  </a>
+                  {link.href.startsWith("/") ? (
+                    <Link
+                      href={link.href}
+                      className="text-white/60 hover:text-brand-green-light transition-colors text-sm"
+                    >
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <a
+                      href={link.href}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleNavClick(link.href);
+                      }}
+                      className="text-white/60 hover:text-brand-green-light transition-colors text-sm"
+                    >
+                      {link.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>

@@ -31,16 +31,16 @@ const galleryItems = [
     category: "Commercial",
   },
   {
-    src: "/images/hero-overlay.jpg",
-    alt: "Professionally landscaped front yard with sculpted shrubs and flower beds",
-    caption: "Full Yard Transformation",
+    src: "/images/gallery-mulch-beds.png",
+    alt: "Residential property with fresh dark mulch beds and manicured ornamental shrubs",
+    caption: "Mulch Bed Installation",
     category: "Residential",
   },
   {
-    src: "/images/service-property.jpg",
-    alt: "Commercial building with professionally maintained landscape and lawn patterns",
-    caption: "Corporate Grounds Maintenance",
-    category: "Commercial",
+    src: "/images/gallery-front-yard.png",
+    alt: "Beautiful front yard landscaping with Japanese maple, shrubs, and fresh mulch borders",
+    caption: "Front Yard Landscaping",
+    category: "Residential",
   },
 ];
 

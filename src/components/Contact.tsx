@@ -2,7 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { Phone, Mail, ExternalLink, Clock, MapPin } from "lucide-react";
+import { Phone, Mail, ExternalLink, MapPin } from "lucide-react";
 
 const JOBBER_URL =
   "https://clienthub.getjobber.com/client_hubs/0b43c1db-c364-4f74-88f5-38f931d30a05/public/work_request/new?source=social_media";
@@ -122,24 +122,6 @@ export default function Contact() {
                 </p>
                 <p className="text-sm text-brand-muted mt-1">
                   Serving the Greater Rochester area
-                </p>
-              </div>
-            </div>
-
-            {/* Hours */}
-            <div className="flex items-start gap-5 bg-white rounded-2xl p-6 border border-brand-green/5">
-              <div className="w-14 h-14 bg-brand-green/10 rounded-2xl flex items-center justify-center shrink-0">
-                <Clock size={24} className="text-brand-green-dark" />
-              </div>
-              <div>
-                <p className="text-sm text-brand-muted font-medium mb-1">
-                  Hours
-                </p>
-                <p className="text-lg font-display font-bold text-brand-dark">
-                  Mon - Sat: 7AM - 7PM
-                </p>
-                <p className="text-sm text-brand-muted mt-1">
-                  Sunday by appointment
                 </p>
               </div>
             </div>
