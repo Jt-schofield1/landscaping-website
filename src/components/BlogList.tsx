@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Calendar } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import type { BlogPost } from "@/lib/blog-posts";
+import type { BlogPost } from "@/lib/supabase";
 
 export default function BlogList({ posts }: { posts: BlogPost[] }) {
   return (
@@ -57,10 +57,10 @@ export default function BlogList({ posts }: { posts: BlogPost[] }) {
                   className="group block bg-white rounded-2xl overflow-hidden border border-brand-green/5 hover:border-brand-green/15 transition-all duration-500 hover:shadow-xl hover:shadow-brand-green/5 hover:-translate-y-1"
                 >
                   {/* Image */}
-                  {post.image && (
+                  {post.image_url && (
                     <div className="relative h-52 overflow-hidden">
                       <Image
-                        src={post.image}
+                        src={post.image_url}
                         alt={post.title}
                         fill
                         className="object-cover transition-all duration-500 group-hover:brightness-110"
@@ -74,8 +74,8 @@ export default function BlogList({ posts }: { posts: BlogPost[] }) {
                   <div className="p-6">
                     <div className="flex items-center gap-2 text-brand-muted text-xs font-medium mb-3">
                       <Calendar size={13} />
-                      <time dateTime={post.date}>
-                        {new Date(post.date).toLocaleDateString("en-US", {
+                      <time dateTime={post.created_at}>
+                        {new Date(post.created_at).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "long",
                           day: "numeric",

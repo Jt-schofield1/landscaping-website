@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Calendar, Phone } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import type { BlogPost } from "@/lib/blog-posts";
+import type { BlogPost } from "@/lib/supabase";
 
 function renderContent(content: string) {
   return content.split("\n\n").map((paragraph, i) => {
@@ -44,10 +44,10 @@ export default function BlogPostView({ post }: { post: BlogPost }) {
   return (
     <div className="min-h-screen bg-cream">
       {/* Header image */}
-      {post.image && (
+      {post.image_url && (
         <div className="relative h-[40vh] sm:h-[50vh] overflow-hidden">
           <Image
-            src={post.image}
+            src={post.image_url}
             alt={post.title}
             fill
             className="object-cover"
@@ -75,11 +75,11 @@ export default function BlogPostView({ post }: { post: BlogPost }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className={post.image ? "-mt-20 relative z-10" : "pt-28"}
+          className={post.image_url ? "-mt-20 relative z-10" : "pt-28"}
         >
           {/* Title card */}
           <div className="bg-white rounded-2xl p-8 sm:p-10 shadow-lg shadow-black/5 border border-brand-green/5 mb-8">
-            {!post.image && (
+            {!post.image_url && (
               <Link
                 href="/blog"
                 className="inline-flex items-center gap-2 text-brand-muted hover:text-brand-green-dark text-sm font-medium transition-colors mb-6"
@@ -90,8 +90,8 @@ export default function BlogPostView({ post }: { post: BlogPost }) {
             )}
             <div className="flex items-center gap-2 text-brand-muted text-sm font-medium mb-4">
               <Calendar size={15} />
-              <time dateTime={post.date}>
-                {new Date(post.date).toLocaleDateString("en-US", {
+              <time dateTime={post.created_at}>
+                {new Date(post.created_at).toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "long",
                   day: "numeric",

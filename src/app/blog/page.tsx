@@ -1,4 +1,4 @@
-import { getAllPosts } from "@/lib/blog-posts";
+import { supabase } from "@/lib/supabase";
 import type { Metadata } from "next";
 import BlogList from "@/components/BlogList";
 
@@ -8,8 +8,14 @@ export const metadata: Metadata = {
     "Landscaping tips, property maintenance advice, and seasonal guides from Adjacent Property Management in Rochester, NY.",
 };
 
-export default function BlogPage() {
-  const posts = getAllPosts();
+export const revalidate = 60;
 
-  return <BlogList posts={posts} />;
+export default async function BlogPage() {
+  const { data: posts } = await supabase
+    .from("blog_posts")
+    .select("*")
+    .eq("published", true)
+    .order("created_at", { ascending: false });
+
+  return <BlogList posts={posts || []} />;
 }
