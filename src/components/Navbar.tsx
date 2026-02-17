@@ -114,7 +114,7 @@ export default function Navbar() {
                         : "text-brand-green-light"
                     }`}
                   >
-                    Property Mgmt
+                    Property Management
                   </span>
                 </div>
               </div>
